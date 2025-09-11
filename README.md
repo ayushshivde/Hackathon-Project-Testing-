@@ -1,4 +1,4 @@
-# Navi Shakti - Women's Safety & Empowerment App
+# Nari Shakti - Women's Safety & Empowerment App
 
 A comprehensive web application designed to empower women with advanced safety tools, emergency assistance, and real-time location sharing. Built with React, Node.js, Express, and MongoDB.
 
