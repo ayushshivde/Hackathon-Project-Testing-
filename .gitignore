@@ -1,0 +1,42 @@
+# Node / general
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+.tmp/
+.temp/
+.dist/
+dist/
+build/
+.cache/
+coverage/
+
+# Env and secrets
+.env
+.env.local
+.env.*.local
+client/.env
+client/.env.local
+
+# Editor/OS
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Generated
+client/build/
+client/.cache/
+
+# Misc
+firebase-debug.log
+functions/node_modules/
