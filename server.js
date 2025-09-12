@@ -56,9 +56,8 @@ const corsOptions = {
     
     // Allow production domains
     const allowedOrigins = [
-      'https://navi-shakti.vercel.app',
-      'https://navi-shakti.netlify.app',
-      'https://your-production-domain.com'
+      
+      'https://hackathon-project-testing.vercel.app',
     ];
     
     if (allowedOrigins.includes(origin)) {
