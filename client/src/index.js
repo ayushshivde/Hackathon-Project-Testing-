@@ -6,6 +6,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
+import { initMessaging, onForegroundMessage } from './firebase';
+import axios from 'axios';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -44,8 +46,7 @@ root.render(
   </React.StrictMode>
 );
 
-import { initMessaging, onForegroundMessage } from './firebase';
-import axios from 'axios';
+
 
 async function setupNotifications() {
   try {
