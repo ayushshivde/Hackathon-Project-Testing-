@@ -57,7 +57,8 @@ const corsOptions = {
     // Allow production domains
     const allowedOrigins = [
       
-      'https://hackathon-project-testing.vercel.app',
+      'https://hackathon-project-testing.vercel.app'
+      // 'http://localhost:3000/',
     ];
     
     if (allowedOrigins.includes(origin)) {
@@ -99,7 +100,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sos', sosRoutes);
 app.use('/api/contacts', contactsRoutes);
 
-// Google Maps API proxy endpoint (to avoid CORS issues)
+// Free geocoding API endpoint using OpenStreetMap Nominatim
 app.get('/api/maps/geocode', async (req, res) => {
   try {
     const { lat, lng } = req.query;
@@ -111,25 +112,30 @@ app.get('/api/maps/geocode', async (req, res) => {
       });
     }
 
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({
-        success: false,
-        message: 'Google Maps API key not configured'
-      });
+    // Try multiple free geocoding services for better reliability
+    const geocodingResults = await Promise.allSettled([
+      // Primary: OpenStreetMap Nominatim (completely free)
+      geocodeWithNominatim(lat, lng),
+      // Fallback: LocationIQ (free tier: 5,000 requests/day)
+      geocodeWithLocationIQ(lat, lng),
+      // Fallback: MapBox (free tier: 100,000 requests/month)
+      geocodeWithMapBox(lat, lng)
+    ]);
+
+    // Find the first successful result
+    let successfulResult = null;
+    for (const result of geocodingResults) {
+      if (result.status === 'fulfilled' && result.value) {
+        successfulResult = result.value;
+        break;
+      }
     }
 
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
-    );
-    
-    const data = await response.json();
-    
-    if (data.status === 'OK' && data.results.length > 0) {
+    if (successfulResult) {
       res.json({
         success: true,
         data: {
-          address: data.results[0].formatted_address,
+          address: successfulResult.address,
           location: {
             latitude: parseFloat(lat),
             longitude: parseFloat(lng)
@@ -137,10 +143,16 @@ app.get('/api/maps/geocode', async (req, res) => {
         }
       });
     } else {
-      res.status(400).json({
-        success: false,
-        message: 'Unable to geocode location',
-        details: data.error_message || 'Unknown error'
+      // If all geocoding services fail, return coordinates as fallback
+      res.json({
+        success: true,
+        data: {
+          address: `${lat}, ${lng}`,
+          location: {
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lng)
+          }
+        }
       });
     }
   } catch (error) {
@@ -151,6 +163,97 @@ app.get('/api/maps/geocode', async (req, res) => {
     });
   }
 });
+
+// OpenStreetMap Nominatim geocoding (completely free)
+// Note: Nominatim has a usage policy - max 1 request per second
+let lastNominatimRequest = 0;
+const NOMINATIM_RATE_LIMIT = 1000; // 1 second in milliseconds
+
+async function geocodeWithNominatim(lat, lng) {
+  try {
+    // Rate limiting for Nominatim
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastNominatimRequest;
+    
+    if (timeSinceLastRequest < NOMINATIM_RATE_LIMIT) {
+      await new Promise(resolve => setTimeout(resolve, NOMINATIM_RATE_LIMIT - timeSinceLastRequest));
+    }
+    
+    lastNominatimRequest = Date.now();
+    
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en`,
+      {
+        headers: {
+          'User-Agent': 'NaviShakti-SafetyApp/1.0'
+        }
+      }
+    );
+    
+    const data = await response.json();
+    
+    if (data && data.display_name) {
+      return {
+        address: data.display_name,
+        source: 'nominatim'
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Nominatim geocoding error:', error);
+    return null;
+  }
+}
+
+// LocationIQ geocoding (free tier: 5,000 requests/day)
+async function geocodeWithLocationIQ(lat, lng) {
+  try {
+    const apiKey = process.env.LOCATIONIQ_API_KEY;
+    if (!apiKey) return null;
+
+    const response = await fetch(
+      `https://us1.locationiq.com/v1/reverse?key=${apiKey}&lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=en`
+    );
+    
+    const data = await response.json();
+    
+    if (data && data.display_name) {
+      return {
+        address: data.display_name,
+        source: 'locationiq'
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('LocationIQ geocoding error:', error);
+    return null;
+  }
+}
+
+// MapBox geocoding (free tier: 100,000 requests/month)
+async function geocodeWithMapBox(lat, lng) {
+  try {
+    const apiKey = process.env.MAPBOX_ACCESS_TOKEN;
+    if (!apiKey) return null;
+
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${apiKey}&types=address,poi`
+    );
+    
+    const data = await response.json();
+    
+    if (data && data.features && data.features.length > 0) {
+      return {
+        address: data.features[0].place_name,
+        source: 'mapbox'
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('MapBox geocoding error:', error);
+    return null;
+  }
+}
 
 // 404 handler
 app.use('*', (req, res) => {

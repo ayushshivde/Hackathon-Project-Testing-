@@ -12,7 +12,7 @@ import {
   FiFilter,
   FiSearch
 } from 'react-icons/fi';
-import axios from 'axios';
+import axios from '../utils/axios';
 import toast from 'react-hot-toast';
 
 const SOSHistory = () => {

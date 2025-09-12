@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiUser, FiPhone, FiMail, FiStar } from 'react-icons/fi';
 import axios from '../utils/axios';
+// import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const ContactModal = ({ contact, onClose, onSave }) => {

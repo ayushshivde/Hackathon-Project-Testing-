@@ -15,7 +15,7 @@ import {
   FiMicOff,
   FiRefreshCw
 } from 'react-icons/fi';
-import axios from 'axios';
+import axios from '../utils/axios';
 import toast from 'react-hot-toast';
 import MapView from '../components/MapView';
 import VoiceCommand from '../components/VoiceCommand';

@@ -13,7 +13,7 @@ import {
   FiSearch,
   FiFilter
 } from 'react-icons/fi';
-import axios from 'axios';
+import axios from '../utils/axios';  
 import toast from 'react-hot-toast';
 import ContactModal from '../components/ContactModal';
 

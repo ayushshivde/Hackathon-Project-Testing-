@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { initMessaging } from '../firebase';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
