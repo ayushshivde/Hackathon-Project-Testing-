@@ -38,9 +38,7 @@ const sendPushNotification = async (fcmToken, notificationData) => {
       token: fcmToken,
       notification: {
         title: '🚨 Emergency Alert - Navi Shakti',
-        body: `${notificationData.userName} needs help! Location: ${notificationData.location.address}`,
-        icon: '/icon-192x192.png',
-        badge: '/badge-72x72.png'
+        body: `${notificationData.userName} needs help! Location: ${notificationData.location.address}`
       },
       data: {
         sosId: notificationData.sosId.toString(),
