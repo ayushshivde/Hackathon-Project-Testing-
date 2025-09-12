@@ -15,7 +15,7 @@ import {
   FiCheck
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { initMessaging } from '../firebase';
+import { initMessaging, requestNotificationPermission } from '../firebase';
 import axios from '../utils/axios';
 
 const Signup = () => {
@@ -94,15 +94,14 @@ const Signup = () => {
       });
       
       if (result.success) {
-        // After signup, request permission and save FCM token
+        // After signup, setup notifications
         try {
-          if ('Notification' in window) {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-              const r = await initMessaging();
-              if (r && r.token) {
-                await axios.put('/api/auth/profile', { fcmToken: r.token });
-              }
+          const hasPermission = await requestNotificationPermission();
+          if (hasPermission) {
+            const result = await initMessaging();
+            if (result && result.token) {
+              await axios.put('/api/auth/profile', { fcmToken: result.token });
+              console.log('FCM token saved after signup');
             }
           }
         } catch (err) {

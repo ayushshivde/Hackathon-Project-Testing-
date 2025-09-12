@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiShield, FiArrowRight } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { initMessaging } from '../firebase';
+import { initMessaging, requestNotificationPermission } from '../firebase';
 import axios from '../utils/axios';
 
 const Login = () => {
@@ -42,19 +42,17 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password);
       if (result.success) {
-        // After successful login, request permission and save FCM token
+        // After successful login, setup notifications
         try {
-          if ('Notification' in window) {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-              const r = await initMessaging();
-              if (r && r.token) {
-                await axios.put('/api/auth/profile', { fcmToken: r.token });
-              }
+          const hasPermission = await requestNotificationPermission();
+          if (hasPermission) {
+            const result = await initMessaging();
+            if (result && result.token) {
+              await axios.put('/api/auth/profile', { fcmToken: result.token });
+              console.log('FCM token saved after login');
             }
           }
         } catch (err) {
-          // Non-blocking
           console.warn('FCM setup after login failed:', err);
         }
         const from = location.state?.from?.pathname || '/dashboard';

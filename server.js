@@ -255,6 +255,47 @@ async function geocodeWithMapBox(lat, lng) {
   }
 }
 
+// Test notification endpoint (for debugging)
+app.post('/api/test-notification', async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    
+    if (!fcmToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'FCM token is required'
+      });
+    }
+
+    const testData = {
+      sosId: 'test_' + Date.now(),
+      userName: 'Test User',
+      userPhone: '+1234567890',
+      location: {
+        latitude: 40.7128,
+        longitude: -74.0060,
+        address: 'New York, NY, USA'
+      },
+      message: 'This is a test notification',
+      timestamp: new Date()
+    };
+
+    const result = await require('./utils/notifications').sendPushNotification(fcmToken, testData);
+    
+    res.json({
+      success: result.success,
+      message: result.success ? 'Test notification sent successfully' : 'Failed to send test notification',
+      details: result
+    });
+  } catch (error) {
+    console.error('Test notification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during test notification'
+    });
+  }
+});
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({

@@ -6,7 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
-import { initMessaging, onForegroundMessage } from './firebase';
+import { initMessaging, onForegroundMessage, requestNotificationPermission } from './firebase';
 import axios from './utils/axios';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -50,21 +50,46 @@ root.render(
 
 async function setupNotifications() {
   try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
+    console.log('Setting up notifications...');
+    
+    // Request notification permission first
+    const hasPermission = await requestNotificationPermission();
+    if (!hasPermission) {
+      console.log('Notification permission not granted');
+      return;
+    }
 
+    // Initialize FCM
     const result = await initMessaging();
-    if (!result) return;
+    if (!result || !result.token) {
+      console.log('Failed to get FCM token');
+      return;
+    }
+
     const { token } = result;
+    console.log('FCM token obtained, sending to backend...');
 
     // Send token to backend to save on user profile (field: fcmToken)
-    await axios.put('/api/auth/profile', { fcmToken: token });
+    try {
+      await axios.put('/api/auth/profile', { fcmToken: token });
+      console.log('FCM token saved to backend');
+    } catch (error) {
+      console.error('Failed to save FCM token to backend:', error);
+    }
 
-    // Optional: Foreground handler
+    // Setup foreground message handler
     onForegroundMessage((payload) => {
-      // show in-app toast/alert
-      console.log('Foreground notification:', payload);
+      console.log('Foreground notification received:', payload);
+      
+      // Show in-app notification
+      if (payload.notification) {
+        const { title, body } = payload.notification;
+        // You can show a toast or custom notification here
+        console.log('Notification:', title, body);
+      }
     });
+
+    console.log('Notification setup completed successfully');
   } catch (e) {
     console.error('Notification setup failed:', e);
   }
