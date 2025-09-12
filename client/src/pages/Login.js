@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiShield, FiArrowRight } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { initMessaging } from '../firebase';
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const Login = () => {
   const [formData, setFormData] = useState({

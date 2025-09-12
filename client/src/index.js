@@ -7,7 +7,7 @@ import { LocationProvider } from './contexts/LocationContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
 import { initMessaging, onForegroundMessage } from './firebase';
-import axios from 'axios';
+import axios from './utils/axios';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
