@@ -139,8 +139,27 @@ router.post('/trigger', authenticateToken, sosValidation, async (req, res) => {
       }
     });
 
-    // Wait for all notifications to be sent
+    // Wait for all notifications to be sent to trusted contacts
     await Promise.all(notificationPromises);
+
+    // Broadcast to all registered users (FCM; SMS fallback if configured)
+    try {
+      const broadcastNotificationData = {
+        sosId: sosRequest._id,
+        userName: req.user.name,
+        userPhone: req.user.phone,
+        location: sosRequest.location,
+        message: sosRequest.message,
+        timestamp: sosRequest.createdAt
+      };
+
+      const { broadcastSosToAllUsers } = require('../utils/notifications');
+      const broadcastResult = await broadcastSosToAllUsers(broadcastNotificationData);
+      console.log('Broadcast summary:', broadcastResult);
+    } catch (e) {
+      console.error('Broadcast to all users failed:', e);
+    }
+
     await sosRequest.save();
 
     // Update user's last known location

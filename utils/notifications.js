@@ -1,5 +1,20 @@
 const admin = require('firebase-admin');
 const axios = require('axios');
+const User = require('../models/User');
+
+// // Twilio client (optional - only initialized if env vars are present)
+// let twilioClient = null;
+// if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+//   try {
+//     twilioClient = require('twilio')(
+//       process.env.TWILIO_ACCOUNT_SID,
+//       process.env.TWILIO_AUTH_TOKEN
+//     );
+//     console.log('Twilio client initialized');
+//   } catch (e) {
+//     console.warn('Failed to initialize Twilio client:', e.message);
+//   }
+// }
 
 // Initialize Firebase Admin SDK
 let firebaseInitialized = false;
@@ -92,41 +107,153 @@ const sendPushNotification = async (fcmToken, notificationData) => {
   }
 };
 
+// Send push notifications to all users (batched)
+const sendPushToAllUsers = async (notificationData) => {
+  try {
+    initializeFirebase();
+
+    if (!firebaseInitialized) {
+      throw new Error('Firebase not initialized');
+    }
+
+    // Fetch all users with a valid fcmToken
+    const users = await User.find(
+      { fcmToken: { $ne: null } },
+      { _id: 1, name: 1, phone: 1, email: 1, fcmToken: 1 }
+    ).lean();
+
+    if (!users || users.length === 0) {
+      return { success: true, total: 0, sent: 0, failed: 0 };
+    }
+
+    // Batch tokens (FCM supports up to 500 per multicast)
+    const BATCH_SIZE = 500;
+    const batches = [];
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+      batches.push(users.slice(i, i + BATCH_SIZE));
+    }
+
+    let totalSent = 0;
+    let totalFailed = 0;
+    const invalidTokens = [];
+
+    for (const batch of batches) {
+      const tokens = batch.map(u => u.fcmToken).filter(Boolean);
+      if (tokens.length === 0) continue;
+
+      const message = {
+        tokens,
+        notification: {
+          title: '🚨 Emergency Alert - Navi Shakti',
+          body: `${notificationData.userName} needs help! Location: ${notificationData.location.address}`
+        },
+        data: {
+          sosId: String(notificationData.sosId || ''),
+          userName: String(notificationData.userName || ''),
+          userPhone: String(notificationData.userPhone || ''),
+          latitude: String(notificationData.location?.latitude || ''),
+          longitude: String(notificationData.location?.longitude || ''),
+          address: String(notificationData.location?.address || ''),
+          message: String(notificationData.message || ''),
+          timestamp: new Date(notificationData.timestamp || Date.now()).toISOString(),
+          type: 'sos_alert'
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            priority: 'high',
+            sound: 'default',
+            channelId: 'sos_alerts'
+          }
+        }
+      };
+
+      const response = await admin.messaging().sendEachForMulticast(message);
+      totalSent += response.successCount;
+      totalFailed += response.failureCount;
+
+      // Track invalid tokens to clean up
+      response.responses.forEach((r, idx) => {
+        if (!r.success) {
+          const errCode = r.error?.code || '';
+          if (
+            errCode.includes('registration-token-not-registered') ||
+            errCode.includes('invalid-argument')
+          ) {
+            invalidTokens.push(tokens[idx]);
+          }
+        }
+      });
+    }
+
+    // Clean up invalid tokens
+    if (invalidTokens.length > 0) {
+      await User.updateMany(
+        { fcmToken: { $in: invalidTokens } },
+        { $set: { fcmToken: null } }
+      );
+      console.log(`Cleaned up ${invalidTokens.length} invalid FCM tokens`);
+    }
+
+    return {
+      success: true,
+      total: users.length,
+      sent: totalSent,
+      failed: totalFailed
+    };
+  } catch (error) {
+    console.error('sendPushToAllUsers error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Send SMS notification (using Twilio or similar service)
 const sendSMSNotification = async (phoneNumber, notificationData) => {
   try {
-    // For demo purposes, we'll simulate SMS sending
-    // In production, integrate with Twilio, AWS SNS, or similar service
-    
-    const smsBody = `🚨 EMERGENCY ALERT - Navi Shakti
-${notificationData.userName} needs immediate help!
+    const smsBody = `🚨 EMERGENCY ALERT - Navi Shakti\n${notificationData.userName} needs immediate help!\n\nLocation: ${notificationData.location.address}\nCoordinates: ${notificationData.location.latitude}, ${notificationData.location.longitude}\nTime: ${new Date(notificationData.timestamp).toLocaleString()}\nMessage: ${notificationData.message}\n\nPlease contact ${notificationData.userName} at ${notificationData.userPhone} immediately!`;
 
-Location: ${notificationData.location.address}
-Coordinates: ${notificationData.location.latitude}, ${notificationData.location.longitude}
-Time: ${new Date(notificationData.timestamp).toLocaleString()}
-Message: ${notificationData.message}
+    if (twilioClient && process.env.TWILIO_FROM_NUMBER) {
+      const result = await twilioClient.messages.create({
+        to: phoneNumber,
+        from: process.env.TWILIO_FROM_NUMBER,
+        body: smsBody
+      });
+      return { success: true, messageId: result.sid, method: 'sms' };
+    }
 
-Please contact ${notificationData.userName} at ${notificationData.userPhone} immediately!
-
-Reply STOP to opt out.`;
-
-    console.log(`SMS would be sent to ${phoneNumber}:`, smsBody);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    return {
-      success: true,
-      messageId: `sms_${Date.now()}`,
-      method: 'sms'
-    };
+    // Fallback: log only if Twilio not configured
+    console.log(`[SIMULATED SMS → ${phoneNumber}] ${smsBody}`);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return { success: true, messageId: `sms_${Date.now()}`, method: 'sms' };
   } catch (error) {
     console.error('SMS notification error:', error);
-    return {
-      success: false,
-      error: error.message,
-      method: 'sms'
-    };
+    return { success: false, error: error.message, method: 'sms' };
+  }
+};
+
+// Send Twilio SMS to users without push (or optionally to all as fallback)
+const sendSmsToUsersWithoutPush = async (notificationData) => {
+  try {
+    const users = await User.find(
+      { $or: [ { fcmToken: null }, { fcmToken: { $exists: false } } ], phone: { $ne: null } },
+      { _id: 1, name: 1, phone: 1 }
+    ).lean();
+
+    if (!users || users.length === 0) {
+      return { success: true, total: 0, sent: 0, failed: 0 };
+    }
+
+    let sent = 0;
+    let failed = 0;
+    for (const u of users) {
+      const result = await sendSMSNotification(u.phone, notificationData);
+      if (result.success) sent += 1; else failed += 1;
+    }
+
+    return { success: true, total: users.length, sent, failed };
+  } catch (error) {
+    console.error('sendSmsToUsersWithoutPush error:', error);
+    return { success: false, error: error.message };
   }
 };
 
@@ -258,6 +385,25 @@ const sendNotification = async (contact, notificationData) => {
   }
 };
 
+// High-level helper for broadcasting an SOS to all users
+const broadcastSosToAllUsers = async (notificationData) => {
+  try {
+    const pushResult = await sendPushToAllUsers(notificationData);
+
+    // If push failed for some users or no tokens, try SMS to users without tokens
+    const smsResult = await sendSmsToUsersWithoutPush(notificationData);
+
+    return {
+      success: pushResult.success !== false && smsResult.success !== false,
+      push: pushResult,
+      sms: smsResult
+    };
+  } catch (error) {
+    console.error('broadcastSosToAllUsers error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Send test notification (for testing purposes)
 const sendTestNotification = async (contact, message = 'This is a test notification from Navi Shakti') => {
   const testData = {
@@ -279,7 +425,10 @@ const sendTestNotification = async (contact, message = 'This is a test notificat
 module.exports = {
   sendNotification,
   sendPushNotification,
+  sendPushToAllUsers,
   sendSMSNotification,
+  sendSmsToUsersWithoutPush,
   sendEmailNotification,
-  sendTestNotification
+  sendTestNotification,
+  broadcastSosToAllUsers
 };
