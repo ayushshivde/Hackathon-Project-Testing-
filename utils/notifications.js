@@ -2,19 +2,19 @@ const admin = require('firebase-admin');
 const axios = require('axios');
 const User = require('../models/User');
 
-// // Twilio client (optional - only initialized if env vars are present)
-// let twilioClient = null;
-// if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-//   try {
-//     twilioClient = require('twilio')(
-//       process.env.TWILIO_ACCOUNT_SID,
-//       process.env.TWILIO_AUTH_TOKEN
-//     );
-//     console.log('Twilio client initialized');
-//   } catch (e) {
-//     console.warn('Failed to initialize Twilio client:', e.message);
-//   }
-// }
+// Twilio client (optional - only initialized if env vars are present)
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  try {
+    twilioClient = require('twilio')(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    console.log('Twilio client initialized');
+  } catch (e) {
+    console.warn('Failed to initialize Twilio client:', e.message);
+  }
+}
 
 // Initialize Firebase Admin SDK
 let firebaseInitialized = false;

@@ -49,10 +49,12 @@ router.post('/trigger', authenticateToken, sosValidation, async (req, res) => {
     });
 
     if (activeSos) {
-      return res.status(400).json({
-        success: false,
-        message: 'You already have an active SOS request. Please resolve it first.'
-      });
+      try {
+        await activeSos.markAsResolved(req.user._id, 'Auto-resolved due to new SOS trigger');
+        console.log(`Auto-resolved previous active SOS ${activeSos._id} for user ${userId}`);
+      } catch (e) {
+        console.error('Failed to auto-resolve existing SOS:', e);
+      }
     }
 
     // Create new SOS request
