@@ -138,6 +138,13 @@ export const AuthProvider = ({ children }) => {
           type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
           payload: { user: response.data.data.user }
         });
+        
+        // Setup notifications after successful login
+        if (window.setupNotifications) {
+          setTimeout(() => {
+            window.setupNotifications();
+          }, 1000);
+        }
       } else {
         throw new Error(response.data.message);
       }
@@ -168,6 +175,14 @@ export const AuthProvider = ({ children }) => {
             token: response.data.data.token
           }
         });
+        
+        // Setup notifications after successful login
+        if (window.setupNotifications) {
+          setTimeout(() => {
+            window.setupNotifications();
+          }, 1000);
+        }
+        
         toast.success('Login successful!');
         return { success: true };
       } else {

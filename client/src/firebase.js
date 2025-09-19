@@ -26,30 +26,22 @@ export const initMessaging = async () => {
     const messaging = getMessaging(app);
     
     // VAPID key for web push
-    // Get this from Firebase Console → Project Settings → Cloud Messaging → Web configuration
-    // Look for "Web Push certificates" section and copy the key pair
+    // For now, we'll use a placeholder VAPID key
+    // In production, get this from Firebase Console → Project Settings → Cloud Messaging → Web configuration
     const vapidKey = process.env.REACT_APP_VAPID_KEY;
-
-    if (!vapidKey) {
-      console.warn('No VAPID key found. Trying without VAPID key...');
-      console.warn('To get VAPID key: Firebase Console → Project Settings → Cloud Messaging → Web configuration');
-    }
 
     console.log('Requesting FCM token...');
     
-    // Try to get token without VAPID key first (some configurations work without it)
+    // Get token with VAPID key
     let token;
     try {
-      if (vapidKey && vapidKey.length > 80) {
-        token = await getToken(messaging, { vapidKey });
-      } else {
-        // Try without VAPID key
-        token = await getToken(messaging);
-      }
+      token = await getToken(messaging, { vapidKey });
+      console.log('FCM token obtained with VAPID key');
     } catch (vapidError) {
       console.warn('VAPID key error, trying without VAPID key:', vapidError.message);
       try {
         token = await getToken(messaging);
+        console.log('FCM token obtained without VAPID key');
       } catch (noVapidError) {
         console.error('Failed to get token even without VAPID key:', noVapidError.message);
         throw noVapidError;

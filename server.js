@@ -20,9 +20,29 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "https://maps.googleapis.com"],
-      connectSrc: ["'self'", "https://maps.googleapis.com"],
-      imgSrc: ["'self'", "data:", "https://maps.gstatic.com", "https://maps.googleapis.com"],
+      scriptSrc: [
+        "'self'",
+        "https://maps.googleapis.com",
+        // Firebase SDK for service worker importScripts
+        "https://www.gstatic.com",
+        "https://www.gstatic.com/firebasejs"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://maps.googleapis.com",
+        // FCM/Web Push endpoints
+        "https://fcmregistrations.googleapis.com",
+        "https://fcm.googleapis.com",
+        "https://www.googleapis.com",
+        "https://firebaseinstallations.googleapis.com"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://maps.gstatic.com",
+        "https://maps.googleapis.com",
+        "https://www.gstatic.com"
+      ],
       frameSrc: ["'self'", "https://www.google.com"]
     }
   }

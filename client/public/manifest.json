@@ -22,5 +22,6 @@
   "display": "standalone",
   "theme_color": "#dc2626",
   "background_color": "#ffffff",
-  "orientation": "portrait-primary"
+  "orientation": "portrait-primary",
+  "gcm_sender_id": "401966681166"
 }

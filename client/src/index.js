@@ -84,7 +84,18 @@ async function setupNotifications() {
       // Show in-app notification
       if (payload.notification) {
         const { title, body } = payload.notification;
-        // You can show a toast or custom notification here
+        
+        // Show browser notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(title, {
+            body: body,
+            icon: '/logo192.png',
+            badge: '/badge-72x72.png',
+            tag: 'sos-alert',
+            requireInteraction: true
+          });
+        }
+        
         console.log('Notification:', title, body);
       }
     });
@@ -96,3 +107,5 @@ async function setupNotifications() {
 }
 
 // Call setupNotifications after user logs in
+// This will be called from AuthContext when user logs in
+window.setupNotifications = setupNotifications;

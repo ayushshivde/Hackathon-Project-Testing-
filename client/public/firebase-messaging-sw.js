@@ -2,6 +2,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
+// Initialize Firebase in the service worker
 firebase.initializeApp({
     apiKey: "AIzaSyDQUeEtCBl9Vd1MymHrfRlibWFKc_Jk2QI",
     authDomain: "nari-sakti.firebaseapp.com",
@@ -12,6 +13,7 @@ firebase.initializeApp({
     measurementId: "G-XXBW2N8VKZ"
 });
 
+// Initialize Firebase Cloud Messaging and get a reference to the service
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
