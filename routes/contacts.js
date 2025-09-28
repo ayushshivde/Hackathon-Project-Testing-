@@ -220,17 +220,18 @@ router.delete('/:contactId', authenticateToken, async (req, res) => {
       });
     }
 
-    // Find and remove the contact
-    const contact = user.trustedContacts.id(contactId);
+    // Find the contact index
+    const contactIndex = user.trustedContacts.findIndex(contact => contact._id.toString() === contactId);
     
-    if (!contact) {
+    if (contactIndex === -1) {
       return res.status(404).json({
         success: false,
         message: 'Contact not found'
       });
     }
 
-    contact.remove();
+    // Remove the contact from the array
+    user.trustedContacts.splice(contactIndex, 1);
     await user.save();
 
     res.json({

@@ -77,8 +77,8 @@ const corsOptions = {
     // Allow production domains
     const allowedOrigins = [
       
-      'https://hackathon-project-testing.vercel.app'
-      // 'http://localhost:3000/',
+      // 'https://hackathon-project-testing.vercel.app'
+      'http://localhost:3000/',
     ];
     
     if (allowedOrigins.includes(origin)) {

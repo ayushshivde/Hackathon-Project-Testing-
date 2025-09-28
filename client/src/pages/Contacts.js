@@ -16,6 +16,7 @@ import {
 import axios from '../utils/axios';  
 import toast from 'react-hot-toast';
 import ContactModal from '../components/ContactModal';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 const Contacts = () => {
   const [contacts, setContacts] = useState([]);
@@ -24,6 +25,8 @@ const Contacts = () => {
   const [editingContact, setEditingContact] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRelationship, setFilterRelationship] = useState('all');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState(null);
 
   useEffect(() => {
     loadContacts();
@@ -57,13 +60,16 @@ const Contacts = () => {
     setShowModal(true);
   };
 
-  const handleDeleteContact = async (contactId) => {
-    if (!window.confirm('Are you sure you want to delete this contact?')) {
-      return;
-    }
+  const handleDeleteContact = (contact) => {
+    setContactToDelete(contact);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteContact = async () => {
+    if (!contactToDelete) return;
 
     try {
-      const response = await axios.delete(`/api/contacts/${contactId}`);
+      const response = await axios.delete(`/api/contacts/${contactToDelete._id}`);
       
       if (response.data.success) {
         toast.success('Contact deleted successfully');
@@ -74,7 +80,15 @@ const Contacts = () => {
     } catch (error) {
       console.error('Error deleting contact:', error);
       toast.error('Failed to delete contact');
+    } finally {
+      setShowDeleteDialog(false);
+      setContactToDelete(null);
     }
+  };
+
+  const cancelDeleteContact = () => {
+    setShowDeleteDialog(false);
+    setContactToDelete(null);
   };
 
   const handleSetPrimary = async (contactId) => {
@@ -255,7 +269,7 @@ const Contacts = () => {
                       <FiEdit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteContact(contact._id)}
+                      onClick={() => handleDeleteContact(contact)}
                       className="p-2 text-gray-400 hover:text-red-600 transition-colors duration-200"
                       title="Delete contact"
                     >
@@ -334,6 +348,18 @@ const Contacts = () => {
           onSave={handleModalSave}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={cancelDeleteContact}
+        onConfirm={confirmDeleteContact}
+        title="Delete Contact"
+        message={`Are you sure you want to delete "${contactToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 };
