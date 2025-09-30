@@ -41,7 +41,7 @@ messaging.onBackgroundMessage((payload) => {
     };
 
     return self.registration.showNotification(
-        title || '🚨 Emergency Alert - Navi Shakti',
+        title || '🚨 Emergency Alert - Nari Shakti Shield',
         notificationOptions
     );
 });

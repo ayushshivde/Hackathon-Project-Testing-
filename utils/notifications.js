@@ -52,7 +52,7 @@ const sendPushNotification = async (fcmToken, notificationData) => {
     const message = {
       token: fcmToken,
       notification: {
-        title: '🚨 Emergency Alert - Navi Shakti',
+        title: '🚨 Emergency Alert - Nari Shakti Shield',
         body: `${notificationData.userName} needs help! Location: ${notificationData.location.address}`
       },
       data: {
@@ -78,7 +78,7 @@ const sendPushNotification = async (fcmToken, notificationData) => {
         payload: {
           aps: {
             alert: {
-              title: '🚨 Emergency Alert - Navi Shakti',
+              title: '🚨 Emergency Alert - Nari Shakti Shield',
               body: `${notificationData.userName} needs help! Location: ${notificationData.location.address}`
             },
             sound: 'default',
@@ -210,7 +210,7 @@ const sendPushToAllUsers = async (notificationData) => {
 // Send SMS notification (using Twilio or similar service)
 const sendSMSNotification = async (phoneNumber, notificationData) => {
   try {
-    const smsBody = `🚨 EMERGENCY ALERT - Navi Shakti\n${notificationData.userName} needs immediate help!\n\nLocation: ${notificationData.location.address}\nCoordinates: ${notificationData.location.latitude}, ${notificationData.location.longitude}\nTime: ${new Date(notificationData.timestamp).toLocaleString()}\nMessage: ${notificationData.message}\n\nPlease contact ${notificationData.userName} at ${notificationData.userPhone} immediately!`;
+    const smsBody = `🚨 EMERGENCY ALERT - Nari Shakti Shield\n${notificationData.userName} needs immediate help!\n\nLocation: ${notificationData.location.address}\nCoordinates: ${notificationData.location.latitude}, ${notificationData.location.longitude}\nTime: ${new Date(notificationData.timestamp).toLocaleString()}\nMessage: ${notificationData.message}\n\nPlease contact ${notificationData.userName} at ${notificationData.userPhone} immediately!`;
 
     if (twilioClient && process.env.TWILIO_FROM_NUMBER) {
       const result = await twilioClient.messages.create({

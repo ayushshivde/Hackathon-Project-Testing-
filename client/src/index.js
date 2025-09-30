@@ -97,6 +97,7 @@ async function setupNotifications() {
         }
         
         console.log('Notification:', title, body);
+        console.log(title)
       }
     });
 
@@ -108,4 +109,5 @@ async function setupNotifications() {
 
 // Call setupNotifications after user logs in
 // This will be called from AuthContext when user logs in
+// window.setupNotifications = setupNotifications;
 window.setupNotifications = setupNotifications;
