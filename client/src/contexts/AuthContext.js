@@ -204,7 +204,22 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START });
       
-      const response = await axios.post('/api/auth/register', userData);
+      let payload = userData;
+      let headers = {};
+      if (userData && userData.avatar instanceof File) {
+        const formData = new FormData();
+        Object.keys(userData).forEach((key) => {
+          if (key === 'avatar') {
+            formData.append('avatar', userData.avatar);
+          } else {
+            formData.append(key, userData[key]);
+          }
+        });
+        payload = formData;
+        headers['Content-Type'] = 'multipart/form-data';
+      }
+
+      const response = await axios.post('/api/auth/register', payload, { headers });
       
       if (response.data.success) {
         dispatch({
@@ -247,7 +262,24 @@ export const AuthProvider = ({ children }) => {
   // Update user function
   const updateUser = async (userData) => {
     try {
-      const response = await axios.put('/api/auth/profile', userData);
+      let payload = userData;
+      let headers = {};
+      if (userData && userData.avatar instanceof File) {
+        const formData = new FormData();
+        Object.keys(userData).forEach((key) => {
+          if (key === 'avatar') {
+            formData.append('avatar', userData.avatar);
+          } else if (key === 'emergencySettings') {
+            formData.append('emergencySettings', JSON.stringify(userData.emergencySettings));
+          } else {
+            formData.append(key, userData[key]);
+          }
+        });
+        payload = formData;
+        headers['Content-Type'] = 'multipart/form-data';
+      }
+
+      const response = await axios.put('/api/auth/profile', payload, { headers });
       
       if (response.data.success) {
         dispatch({

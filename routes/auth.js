@@ -2,24 +2,15 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const ImageKit = require('imagekit');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { generateToken, authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Multer storage for avatars
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_/]/g, '_');
-    cb(null, `${Date.now()}_${safeName}`);
-  }
-});
+// Multer memory storage (we will upload to ImageKit)
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
@@ -28,6 +19,29 @@ const upload = multer({
     cb(ok ? null : new Error('Unsupported file type'), ok);
   }
 });
+
+// ImageKit configuration
+const imagekit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY || '',
+  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || '',
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || ''
+});
+
+async function uploadAvatarToImageKit(file) {
+  if (!file) return null;
+  if (!imagekit.options || !imagekit.options.privateKey) {
+    // ImageKit not configured; skip upload
+    return null;
+  }
+  const fileName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9.\-_/]/g, '_')}`;
+  const result = await imagekit.upload({
+    file: file.buffer,
+    fileName,
+    folder: process.env.IMAGEKIT_AVATAR_FOLDER || '/nari/avatars',
+    useUniqueFileName: true
+  });
+  return result && result.url ? result.url : null;
+}
 
 // Validation rules
 const registerValidation = [
@@ -84,7 +98,14 @@ router.post('/register', upload.single('avatar'), registerValidation, async (req
     }
 
     // Create new user
-    const avatarUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    let avatarUrl = null;
+    if (req.file) {
+      try {
+        avatarUrl = await uploadAvatarToImageKit(req.file);
+      } catch (e) {
+        console.error('ImageKit upload failed:', e.message);
+      }
+    }
     const user = new User({ name, email, password, phone, avatarUrl });
 
     await user.save();
@@ -226,13 +247,29 @@ router.put('/profile', authenticateToken, [
       });
     }
 
-    const { name, phone, emergencySettings, fcmToken } = req.body;
+    const { name, phone, fcmToken } = req.body;
+    let { emergencySettings } = req.body;
+    // If multipart/form-data sends emergencySettings as JSON string, parse it
+    if (typeof emergencySettings === 'string') {
+      try {
+        emergencySettings = JSON.parse(emergencySettings);
+      } catch (_) {
+        // ignore parse error; validation below will handle if invalid
+      }
+    }
     const updateData = {};
 
     if (name) updateData.name = name;
     if (phone) updateData.phone = phone;
     if (emergencySettings) updateData.emergencySettings = emergencySettings;
-    if (req.file) updateData.avatarUrl = `/uploads/${req.file.filename}`;
+    if (req.file) {
+      try {
+        const uploadedUrl = await uploadAvatarToImageKit(req.file);
+        if (uploadedUrl) updateData.avatarUrl = uploadedUrl;
+      } catch (e) {
+        console.error('ImageKit upload failed:', e.message);
+      }
+    }
     if (typeof fcmToken === 'string') updateData.fcmToken = fcmToken;
 
     const user = await User.findByIdAndUpdate(

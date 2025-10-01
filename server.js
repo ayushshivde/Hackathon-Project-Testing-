@@ -42,7 +42,9 @@ app.use(helmet({
         "data:",
         "https://maps.gstatic.com",
         "https://maps.googleapis.com",
-        "https://www.gstatic.com"
+        "https://www.gstatic.com",
+        // ImageKit CDN
+        (process.env.IMAGEKIT_URL_ENDPOINT ? new URL(process.env.IMAGEKIT_URL_ENDPOINT).origin : 'https://ik.imagekit.io')
       ],
       frameSrc: ["'self'", "https://www.google.com"]
     }

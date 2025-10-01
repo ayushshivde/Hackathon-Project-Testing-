@@ -19,6 +19,8 @@ const Profile = () => {
   const { user, updateUser, changePassword } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
   
   // Profile form data
   const [profileData, setProfileData] = useState({
@@ -54,6 +56,7 @@ const Profile = () => {
           panicMode: user.emergencySettings?.panicMode ?? false
         }
       });
+      setAvatarPreview(user.avatarUrl ? (user.avatarUrl.startsWith('http') ? user.avatarUrl : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${user.avatarUrl}`) : '');
     }
   }, [user]);
 
@@ -90,15 +93,34 @@ const Profile = () => {
     setIsLoading(true);
 
     try {
-      const result = await updateUser(profileData);
+      const result = await updateUser({ ...profileData, avatar: avatarFile || undefined });
       if (result.success) {
         toast.success('Profile updated successfully');
+        if (avatarFile) {
+          setAvatarFile(null);
+        }
       }
     } catch (error) {
       console.error('Profile update error:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+  const handleAvatarChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Please select a JPG, PNG, or WEBP image');
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Image must be less than 3MB');
+      return;
+    }
+    setAvatarFile(file);
+    const url = URL.createObjectURL(file);
+    setAvatarPreview(url);
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -205,6 +227,30 @@ const Profile = () => {
                   </h2>
                   
                   <form onSubmit={handleProfileSubmit} className="space-y-6">
+                    {/* Avatar */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Profile Photo
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                          {avatarPreview ? (
+                            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-xs text-gray-500">No image</div>
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                            className="block text-sm text-gray-700"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">JPG, PNG, or WEBP. Max 3MB.</p>
+                        </div>
+                      </div>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">

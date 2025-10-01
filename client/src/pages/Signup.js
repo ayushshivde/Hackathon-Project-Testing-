@@ -30,6 +30,8 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
   
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -46,6 +48,23 @@ const Signup = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Please select a JPG, PNG, or WEBP image');
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Image must be less than 3MB');
+      return;
+    }
+    setAvatarFile(file);
+    const url = URL.createObjectURL(file);
+    setAvatarPreview(url);
   };
 
   const validateForm = () => {
@@ -90,7 +109,8 @@ const Signup = () => {
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
-        password: formData.password
+        password: formData.password,
+        avatar: avatarFile || undefined
       });
       
       if (result.success) {
@@ -157,6 +177,30 @@ const Signup = () => {
           className="card"
         >
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Avatar Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Profile Photo
+              </label>
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-xs text-gray-500">No image</div>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="block text-sm text-gray-700"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, or WEBP. Max 3MB.</p>
+                </div>
+              </div>
+            </div>
             {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
