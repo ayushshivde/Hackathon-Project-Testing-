@@ -68,7 +68,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Helmet>
-        <title>Login - Navi Shakti</title>
+        <title>Login - Nari Shakti</title>
         <meta name="description" content="Sign in to your Navi Shakti account for women's safety and empowerment." />
       </Helmet>
 
@@ -89,7 +89,7 @@ const Login = () => {
             Welcome Back
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your Navi Shakti account
+            Sign in to your Nari Shakti Shield account
           </p>
         </motion.div>
 

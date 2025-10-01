@@ -88,6 +88,14 @@ router.post('/register', upload.single('avatar'), registerValidation, async (req
 
     const { name, email, password, phone } = req.body;
 
+    // Require avatar on registration
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Profile photo is required'
+      });
+    }
+
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -99,12 +107,10 @@ router.post('/register', upload.single('avatar'), registerValidation, async (req
 
     // Create new user
     let avatarUrl = null;
-    if (req.file) {
-      try {
-        avatarUrl = await uploadAvatarToImageKit(req.file);
-      } catch (e) {
-        console.error('ImageKit upload failed:', e.message);
-      }
+    try {
+      avatarUrl = await uploadAvatarToImageKit(req.file);
+    } catch (e) {
+      console.error('ImageKit upload failed:', e.message);
     }
     const user = new User({ name, email, password, phone, avatarUrl });
 

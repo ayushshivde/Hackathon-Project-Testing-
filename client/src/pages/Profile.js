@@ -21,6 +21,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   
   // Profile form data
   const [profileData, setProfileData] = useState({
@@ -229,28 +230,46 @@ const Profile = () => {
                   <form onSubmit={handleProfileSubmit} className="space-y-6">
                     {/* Avatar */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Profile Photo
-                      </label>
-                      <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                      <p className="text-sm mb-2">
+                        <span className="text-red-600 font-semibold mr-2">Instruction:</span>
+                        <span className="text-gray-800">Please upload a clear, front-facing photo of your face — no side angles, no blur, no zoom.</span>
+                      </p>
+                      <div className="flex flex-col items-stretch">
+                        <div
+                          className="w-full rounded-xl bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-300 cursor-pointer"
+                          style={{ aspectRatio: '1 / 1' }}
+                          onClick={() => { if (avatarPreview) setIsImagePreviewOpen(true); }}
+                        >
                           {avatarPreview ? (
-                            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-contain" />
                           ) : (
-                            <div className="text-xs text-gray-500">No image</div>
+                            <div className="text-sm text-gray-500">No image</div>
                           )}
                         </div>
-                        <div>
+                        <div className="mt-3">
                           <input
+                            id="profile-avatar-input"
                             type="file"
                             accept="image/*"
                             onChange={handleAvatarChange}
-                            className="block text-sm text-gray-700"
+                            className="hidden"
                           />
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('profile-avatar-input').click()}
+                            className="btn-primary px-4 py-2 text-sm"
+                          >
+                            Edit photo
+                          </button>
                           <p className="text-xs text-gray-500 mt-1">JPG, PNG, or WEBP. Max 3MB.</p>
                         </div>
                       </div>
                     </div>
+                    {isImagePreviewOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" onClick={() => setIsImagePreviewOpen(false)}>
+                        <img src={avatarPreview} alt="Preview" className="max-w-[90vw] max-h-[90vh] object-contain" />
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
