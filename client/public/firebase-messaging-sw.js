@@ -51,10 +51,19 @@ self.addEventListener('notificationclick', (event) => {
     console.log('Notification clicked:', event);
     event.notification.close();
     
-    if (event.action === 'view') {
-        // Open the app
-        event.waitUntil(
-            clients.openWindow('/dashboard')
-        );
-    }
+    const data = event.notification?.data || {};
+    const targetPath = data?.type === 'sos_alert' ? '/sos-history' : '/dashboard';
+    const fullUrl = self.location.origin + targetPath;
+    
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if ('focus' in client) {
+                    client.postMessage({ type: 'NOTIFICATION_CLICK', url: targetPath, data });
+                    return client.focus();
+                }
+            }
+            return clients.openWindow(fullUrl);
+        })
+    );
 });

@@ -66,6 +66,11 @@ const sendPushNotification = async (fcmToken, notificationData) => {
         timestamp: notificationData.timestamp.toISOString(),
         type: 'sos_alert'
       },
+      webpush: {
+        fcm_options: {
+          link: `${process.env.CLIENT_URL || ''}/dashboard`
+        }
+      },
       android: {
         priority: 'high',
         notification: {
@@ -144,7 +149,7 @@ const sendPushToAllUsers = async (notificationData) => {
       const message = {
         tokens,
         notification: {
-          title: '🚨 Emergency Alert - Navi Shakti',
+          title: '🚨 Emergency Alert - Nari Shakti Shield',
           body: `${notificationData.userName} needs help! Location: ${notificationData.location.address}`
         },
         data: {
@@ -157,6 +162,11 @@ const sendPushToAllUsers = async (notificationData) => {
           message: String(notificationData.message || ''),
           timestamp: new Date(notificationData.timestamp || Date.now()).toISOString(),
           type: 'sos_alert'
+        },
+        webpush: {
+          fcm_options: {
+            link: `${process.env.CLIENT_URL || ''}/sos-history`
+          }
         },
         android: {
           priority: 'high',
