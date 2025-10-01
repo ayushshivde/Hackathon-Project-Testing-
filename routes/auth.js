@@ -1,9 +1,33 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { generateToken, authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Multer storage for avatars
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_/]/g, '_');
+    cb(null, `${Date.now()}_${safeName}`);
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
+  fileFilter: (req, file, cb) => {
+    const ok = ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype);
+    cb(ok ? null : new Error('Unsupported file type'), ok);
+  }
+});
 
 // Validation rules
 const registerValidation = [
@@ -36,7 +60,7 @@ const loginValidation = [
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
-router.post('/register', registerValidation, async (req, res) => {
+router.post('/register', upload.single('avatar'), registerValidation, async (req, res) => {
   try {
     // Check for validation errors
     const errors = validationResult(req);
@@ -60,12 +84,8 @@ router.post('/register', registerValidation, async (req, res) => {
     }
 
     // Create new user
-    const user = new User({
-      name,
-      email,
-      password,
-      phone
-    });
+    const avatarUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const user = new User({ name, email, password, phone, avatarUrl });
 
     await user.save();
 
@@ -119,7 +139,7 @@ router.post('/login', loginValidation, async (req, res) => {
       });
     }
 
-    // Check if account is active
+    // Check if account is active   
     if (!user.isActive) {
       return res.status(401).json({
         success: false,
@@ -194,7 +214,7 @@ router.put('/profile', authenticateToken, [
     .optional()
     .matches(/^\+?[\d\s-()]+$/)
     .withMessage('Please provide a valid phone number')
-], async (req, res) => {
+], upload.single('avatar'), async (req, res) => {
   try {
     // Check for validation errors
     const errors = validationResult(req);
@@ -212,6 +232,7 @@ router.put('/profile', authenticateToken, [
     if (name) updateData.name = name;
     if (phone) updateData.phone = phone;
     if (emergencySettings) updateData.emergencySettings = emergencySettings;
+    if (req.file) updateData.avatarUrl = `/uploads/${req.file.filename}`;
     if (typeof fcmToken === 'string') updateData.fcmToken = fcmToken;
 
     const user = await User.findByIdAndUpdate(

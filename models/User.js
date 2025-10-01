@@ -79,6 +79,10 @@ const userSchema = new mongoose.Schema({
     address: String,
     timestamp: Date
   },
+  avatarUrl: {
+    type: String,
+    default: null
+  },
   fcmToken: {
     type: String,
     default: null
