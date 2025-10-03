@@ -68,7 +68,7 @@ const sendPushNotification = async (fcmToken, notificationData) => {
       },
       webpush: {
         fcm_options: {
-          link: `${process.env.CLIENT_URL || ''}/dashboard`
+          link: `${process.env.CLIENT_URL || ''}/help-desk?sosId=${encodeURIComponent(String(notificationData.sosId))}`
         }
       },
       android: {
@@ -165,7 +165,7 @@ const sendPushToAllUsers = async (notificationData) => {
         },
         webpush: {
           fcm_options: {
-            link: `${process.env.CLIENT_URL || ''}/sos-history`
+            link: `${process.env.CLIENT_URL || ''}/help-desk?sosId=${encodeURIComponent(String(notificationData.sosId || ''))}`
           }
         },
         android: {

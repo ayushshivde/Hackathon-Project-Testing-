@@ -17,6 +17,7 @@ import Contacts from './pages/Contacts';
 import Profile from './pages/Profile';
 import SOSHistory from './pages/SOSHistory';
 import NotFound from './pages/NotFound';
+import HelpDesk from './pages/HelpDesk';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -107,6 +108,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/help-desk" 
+              element={
+                <ProtectedRoute>
+                  <HelpDesk />
                 </ProtectedRoute>
               } 
             />

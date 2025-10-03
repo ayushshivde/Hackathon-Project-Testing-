@@ -486,3 +486,35 @@ router.post('/:id/note', authenticateToken, validateSosOwnership, [
 });
 
 module.exports = router;
+ 
+// Public endpoint to fetch limited SOS details for Help Desk
+// @route   GET /api/sos/:id/public
+// @desc    Get public SOS details (requester name, avatar, location)
+// @access  Public (consider adding a short-lived token in production)
+router.get('/:id/public', async (req, res) => {
+  try {
+    const sosId = req.params.id;
+    const sosRequest = await SosRequest.findById(sosId).lean();
+    if (!sosRequest) {
+      return res.status(404).json({ success: false, message: 'SOS request not found' });
+    }
+
+    const requester = await User.findById(sosRequest.userId).select('name avatarUrl').lean();
+
+    res.json({
+      success: true,
+      data: {
+        sosId: String(sosRequest._id),
+        requesterName: requester?.name || sosRequest.user?.name || 'Unknown',
+        requesterAvatarUrl: requester?.avatarUrl || null,
+        location: sosRequest.location,
+        message: sosRequest.message,
+        status: sosRequest.status,
+        createdAt: sosRequest.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Get public SOS details error:', error);
+    res.status(500).json({ success: false, message: 'Server error while fetching SOS details' });
+  }
+});

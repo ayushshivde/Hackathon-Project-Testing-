@@ -33,6 +33,7 @@ const Navbar = () => {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: FiShield },
     { path: '/contacts', label: 'Contacts', icon: FiUsers },
+    { path: '/help-desk', label: 'Help Desk', icon: FiShield },
     { path: '/sos-history', label: 'SOS History', icon: FiUsers },
   ];
 

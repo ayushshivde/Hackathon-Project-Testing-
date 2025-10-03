@@ -52,14 +52,15 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
     const data = event.notification?.data || {};
-    const targetPath = data?.type === 'sos_alert' ? '/sos-history' : '/dashboard';
-    const fullUrl = self.location.origin + targetPath;
+    // Prefer deep link from data.url if present, else fall back
+    const deepLink = data.url || (data.sosId ? `/help-desk?sosId=${encodeURIComponent(data.sosId)}` : '/dashboard');
+    const fullUrl = self.location.origin + deepLink;
     
         event.waitUntil(
             clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
                 for (const client of clientList) {
                 if ('focus' in client) {
-                    client.postMessage({ type: 'NOTIFICATION_CLICK', url: targetPath, data });
+                    client.postMessage({ type: 'NOTIFICATION_CLICK', url: deepLink, data });
                         return client.focus();
                     }
                 }
