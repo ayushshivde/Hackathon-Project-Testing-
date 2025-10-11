@@ -47,7 +47,7 @@ const Navbar = () => {
               <FiShield className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900 font-display">
-              Navi Shakti Shield
+              Nari Shakti Shield
             </span>
           </Link>
 

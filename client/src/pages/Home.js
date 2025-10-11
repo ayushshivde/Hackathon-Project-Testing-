@@ -72,7 +72,7 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       <Helmet>
-        <title>Navi Shakti - Women's Safety & Empowerment</title>
+        <title>Nari Shakti - Women's Safety & Empowerment</title>
         <meta name="description" content="Empowering women with advanced safety tools, emergency assistance, and real-time location sharing. Your safety is our priority." />
       </Helmet>
 
@@ -92,7 +92,7 @@ const Home = () => {
                 </span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Navi Shakti empowers women with advanced safety tools, emergency assistance, 
+                Nari Shakti empowers women with advanced safety tools, emergency assistance, 
                 and real-time location sharing. Feel secure and confident wherever you go.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
